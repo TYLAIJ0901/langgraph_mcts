@@ -38,7 +38,6 @@ def mcts_node(graph_state: GraphState, runnable_config: langchain_core.runnables
         updated_graph_state: GraphState = {
             'game_state': game_state,
             'action_records': action_records, # Persist existing records
-            'current_player_id': graph_state.get('current_player_id') # Persist existing player ID
         }
         return updated_graph_state
 
@@ -63,6 +62,5 @@ def mcts_node(graph_state: GraphState, runnable_config: langchain_core.runnables
     updated_graph_state: GraphState = {
         'game_state': next_game_state,
         'action_records': action_records,
-        'current_player_id': graph_state.get('current_player_id')
     }
     return updated_graph_state

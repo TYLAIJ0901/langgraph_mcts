@@ -7,4 +7,3 @@ BaseAction = common.base_types.BaseAction
 class GraphState(typing.TypedDict):
     game_state: common.base_types.BaseState
     action_records: list[BaseAction]
-    current_player_id: typing.Optional[str]
