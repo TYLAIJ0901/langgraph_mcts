@@ -2,8 +2,8 @@ import math
 import random # Ensure random is imported
 import typing
 
-from src.main.python.common.base_types import BaseState, BaseAction
-from src.main.python.mcts.config import MCTSConfig
+from common.base_types import BaseState, BaseAction
+from .config import MCTSConfig
 
 # TYPE_CHECKING block might be needed if MCTS refers to Node and Node refers to MCTS later in the same file.
 # For now, Node is defined first.
@@ -12,7 +12,7 @@ from src.main.python.mcts.config import MCTSConfig
 
 class Node(typing.Generic[BaseAction]):
     def __init__(self, state: BaseState, parent: typing.Optional['Node[BaseAction]'] = None,
-                 action_taken: typing.Optional[BaseAction] = None, config: MCTSConfig = None):
+                 action_taken: typing.Optional[BaseAction] = None, config: typing.Optional[MCTSConfig] = None):
         # Critical Assumption: The 'state' object is expected to have a method 'get_all_possible_actions() -> list[BaseAction]'
         # This is necessary for MCTS operations like expansion and determining if a node is fully expanded.
         self.state: BaseState = state
@@ -50,10 +50,10 @@ class Node(typing.Generic[BaseAction]):
         if self.visit_count == 0:
             # Encourage exploration of unvisited nodes
             return float('inf')
-        
+
         # Q(s,a) is the average reward of the current node (exploitation term)
         exploitation_term = self.average_reward
-        
+
         # C_p * sqrt(ln(N(s_parent)) / N(s,a)) is the exploration term
         # N(s_parent) is parent_visit_count
         # N(s,a) is self.visit_count
@@ -83,7 +83,7 @@ class MCTS(typing.Generic[BaseAction]):
     def search(self, initial_state: BaseState) -> typing.Optional[BaseAction]:
         if not hasattr(initial_state, 'get_all_possible_actions'):
             raise AttributeError("The initial_state object must have a method 'get_all_possible_actions'.")
-        
+
         if not hasattr(initial_state, 'is_terminated'):
             raise AttributeError("The initial_state object must have a property or method 'is_terminated'.")
 
@@ -105,22 +105,22 @@ class MCTS(typing.Generic[BaseAction]):
             expanded_node_for_simulation = promising_node
             if not promising_node.is_terminated:
                 expanded_node_for_simulation = self._expand_node(promising_node)
-            
+
             simulation_reward = self._simulate_random_playout(expanded_node_for_simulation)
-            
+
             self._backpropagate(expanded_node_for_simulation, simulation_reward)
 
         best_child = None
         highest_visits = -1
 
         if not root_node.children:
-            return None 
+            return None
 
         for child in root_node.children:
             if child.visit_count > highest_visits:
                 highest_visits = child.visit_count
                 best_child = child
-        
+
         return best_child.action_taken if best_child else None
 
     def _select_promising_node(self, node: Node[BaseAction]) -> Node[BaseAction]:
@@ -130,14 +130,14 @@ class MCTS(typing.Generic[BaseAction]):
                  raise AttributeError(f"State {type(current_node.state)} lacks 'get_all_possible_actions'")
 
             possible_actions = current_node.state.get_all_possible_actions()
-            if not possible_actions: 
-                break 
+            if not possible_actions:
+                break
 
             if len(current_node.children) < len(possible_actions):
                 return current_node
-            
-            if not current_node.children: 
-                 break 
+
+            if not current_node.children:
+                 break
 
             best_child = None
             max_uct = -float('inf')
@@ -146,16 +146,16 @@ class MCTS(typing.Generic[BaseAction]):
                 if uct > max_uct:
                     max_uct = uct
                     best_child = child_node
-            
-            if best_child is None: 
-                break 
+
+            if best_child is None:
+                break
             current_node = best_child
-        
+
         return current_node
 
     def _expand_node(self, node: Node[BaseAction]) -> Node[BaseAction]:
-        if node.is_terminated: 
-            return node 
+        if node.is_terminated:
+            return node
 
         if not hasattr(node.state, 'get_all_possible_actions'):
             raise AttributeError(f"State {type(node.state)} lacks 'get_all_possible_actions'")
@@ -170,34 +170,28 @@ class MCTS(typing.Generic[BaseAction]):
                 next_state, _ = node.state.get_next_state(action)
                 new_child_node = Node(state=next_state, parent=node, action_taken=action, config=node.config)
                 node.children.append(new_child_node)
-                return new_child_node 
+                return new_child_node
 
-        return node 
+        return node
 
     def _simulate_random_playout(self, node: Node[BaseAction]) -> float:
-        current_state = node.state 
-        
-        # Use max_simulation_depth from config if available, otherwise a default.
-        # The problem description does not specify adding max_simulation_depth to MCTSConfig,
-        # so I'm using a default value here as shown in the snippet.
-        # Consider adding it to MCTSConfig for more flexibility.
-        max_simulation_depth = getattr(self.config, 'max_simulation_depth', 100) 
+        current_state = node.state
 
-        for _ in range(max_simulation_depth):
+        for _ in range(self.config.max_simulation_depth):
             if current_state.is_terminated:
                 break
-            
+
             if not hasattr(current_state, 'get_all_possible_actions'):
                 raise AttributeError(f"State {type(current_state)} in sim lacks 'get_all_possible_actions'")
 
             available_actions = current_state.get_all_possible_actions()
             if not available_actions:
-                break 
-            
+                break
+
             random_action = random.choice(available_actions)
             # Assuming get_next_state returns (next_state, reward_from_action)
             current_state, _ = current_state.get_next_state(random_action)
-        
+
         # Assuming BaseState has an evaluate() method that returns the value of the terminal state.
         return current_state.evaluate()
 

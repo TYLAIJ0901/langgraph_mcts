@@ -20,14 +20,21 @@ class BaseState(typing.Generic[BaseAction], metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def evluate(self) -> float:
+    def evaluate(self) -> float:
         """
         Evaluate this state
         """
         pass
 
     @abc.abstractmethod
+    def get_all_possible_actions(self) -> list[BaseAction]:
+        """
+        Return a lisr of actions which can be executed from this state
+        """
+        pass
+
     @property
+    @abc.abstractmethod
     def is_terminated(self) -> bool:
         """
         Indicate whether the state is terminated
