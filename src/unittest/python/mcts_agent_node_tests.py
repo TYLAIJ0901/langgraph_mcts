@@ -48,7 +48,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
         initial_graph_state: GraphState = {
             'game_state': game_state,
             'action_records': [],
-            'current_player_id': 'player1'
         }
 
         # More simulations to be more certain of picking the best path
@@ -61,7 +60,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
         self.assertTrue(result_graph_state['game_state'].is_terminated)
         self.assertEqual(len(result_graph_state['action_records']), 1)
         self.assertEqual(result_graph_state['action_records'][0], 'a1')
-        self.assertEqual(result_graph_state['current_player_id'], 'player1')
 
     def test_mcts_node_on_terminal_state(self):
         game_state = self.terminal_state
@@ -69,7 +67,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
         initial_graph_state: GraphState = {
             'game_state': game_state,
             'action_records': list(initial_action_records), # Ensure it's a new list
-            'current_player_id': 'player2'
         }
 
         run_config = self.create_mock_runnable_config(self.default_mcts_params)
@@ -78,14 +75,12 @@ class TestMCTSNodeFunction(unittest.TestCase):
         self.assertEqual(result_graph_state['game_state'].id_val, self.terminal_state.id_val)
         self.assertEqual(result_graph_state['action_records'], initial_action_records) # No new action
         self.assertEqual(len(result_graph_state['action_records']), 2)
-        self.assertEqual(result_graph_state['current_player_id'], 'player2')
 
     def test_mcts_node_initializes_action_records_if_missing(self):
         game_state = self.root_state_val5_best # 'a1' (to val 5) is better than 'a2' (to val 3)
         # 'action_records' key is missing in initial_graph_state
         initial_graph_state: GraphState = {
             'game_state': game_state,
-            'current_player_id': 'player_xyz'
         }
 
         run_config = self.create_mock_runnable_config(self.default_mcts_params)
@@ -97,14 +92,12 @@ class TestMCTSNodeFunction(unittest.TestCase):
         self.assertIsInstance(result_graph_state['action_records'], list)
         self.assertEqual(len(result_graph_state['action_records']), 1)
         self.assertEqual(result_graph_state['action_records'][0], 'a1')
-        self.assertEqual(result_graph_state['current_player_id'], 'player_xyz')
 
     def test_mcts_node_uses_mcts_config_from_runnable_config(self):
         game_state = self.root_state_val10_best
         initial_graph_state: GraphState = {
             'game_state': game_state,
             'action_records': [],
-            'current_player_id': 'player1'
         }
 
         # Test 1: MCTSConfig passed as dict
@@ -124,7 +117,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
         initial_graph_state_copy: GraphState = {
             'game_state': game_state,
             'action_records': [],
-            'current_player_id': 'player1'
         }
         result_2 = mcts_node(initial_graph_state_copy, typing.cast(RunnableConfig, run_config_obj))
 
@@ -140,7 +132,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
         initial_graph_state: GraphState = {
             'game_state': no_action_state,
             'action_records': [],
-            'current_player_id': 'player_no_action'
         }
 
         run_config = self.create_mock_runnable_config(self.default_mcts_params)
@@ -148,7 +139,6 @@ class TestMCTSNodeFunction(unittest.TestCase):
 
         self.assertEqual(result_graph_state['game_state'].id_val, no_action_state.id_val) # State should not change
         self.assertEqual(len(result_graph_state['action_records']), 0) # No action recorded
-        self.assertEqual(result_graph_state['current_player_id'], 'player_no_action')
 
 if __name__ == '__main__':
     unittest.main()
